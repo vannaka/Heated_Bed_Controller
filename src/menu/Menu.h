@@ -10,10 +10,23 @@ typedef struct
     
 } menu_item_t;
 
+// Forward declaration
+struct _menu_t;
 
-typedef struct 
+typedef struct _menu_t
 {
+    char* name;
 
+    // The parent of this menu
+    _menu_t*        parent;
+
+    // The children of this menu
+    _menu_t*        menu_entries;
+    uint8_t         num_menu_entries;
+
+    // The items to display in this menu
+    menu_item_t*    item_entries;
+    uint8_t         num_item_entries;
 } menu_t;
 
 class Menu
