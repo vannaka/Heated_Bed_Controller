@@ -3,6 +3,19 @@
 
 #include <Adafruit_LiquidCrystal.h>
 
+
+typedef struct
+{
+    char* text;
+    
+} menu_item_t;
+
+
+typedef struct 
+{
+
+} menu_t;
+
 class Menu
 {
 public:
