@@ -1,28 +1,14 @@
-#include "menu/Menu.h"
+#include <menu.h>
 
-menu_t main_menu;
 
-menu_t bed_menu_0 = 
-{
-    "Bed 0",
-    true,
-    &main_menu,
-    NULL,
-    0,
-    (menu_item_t[])
-    {
-        {
-            "Setpoint: "
-        }
-    },
-    1
-};
+MENU(subMenu,"Bed 1",doNothing,anyEvent,noStyle
+  ,OP("Sub1",doNothing,anyEvent)
+  ,OP("Sub2",doNothing,anyEvent)
+  ,OP("Sub3",doNothing,anyEvent)
+  ,EXIT("<-Back")
+);
 
-menu_t main_menu = 
-{
-    "Main Menu",
-    true,
-    NULL,
-    (menu_t[]){ bed_menu_0 },
-    1,
-};
+MENU(mainMenu,"Main menu",doNothing,noEvent,wrapStyle
+  ,SUBMENU(subMenu)
+  ,EXIT("<-Back")
+);

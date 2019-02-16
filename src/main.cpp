@@ -1,50 +1,110 @@
 #include <Arduino.h>
 #include <TaskScheduler.h>
-#include <Adafruit_LiquidCrystal.h>
 
-#include "encoder/Encoder.h"
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include <menu.h>
+#include <menuIO/lcdOut.h>
+#include <TimerOne.h>
+#include <ClickEncoder.h>
+#include <menuIO/clickEncoderIn.h>
+#include <menuIO/keyIn.h>
+#include <menuIO/chainStream.h>
+#include <menuIO/serialOut.h>
+#include <menuIO/serialIn.h>
 
 #include "heater/heater.h"
 #include "heater/pin_defs.h"
 
-#include "menu/Menu.h"
-#include "my_menus.h"
+using namespace Menu;
 
 
-Adafruit_LiquidCrystal lcd( 0 );
+/******************************************************************************
+ *                                 Defines
+ *****************************************************************************/
+// Encoder
+#define encA 24
+#define encB 22
+#define encBtn 26
+
+// Menu
+#define MAX_DEPTH 2
+
+/******************************************************************************
+ *                          Function Declarations
+ *****************************************************************************/
+// Tasks
+void bed_0_task();
+void menu_task();
+
+// Menu Callbacks
+
+/******************************************************************************
+ *                               Global Vars
+ *****************************************************************************/
+// Screen
+LiquidCrystal_I2C lcd( 0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE );
 
 // Encoder
-uint8_t encoderPos = 0; 
-uint8_t oldEncPos = 0;
+ClickEncoder clickEncoder( encA, encB, encBtn, 4 );
+ClickEncoderStream encStream( clickEncoder, 1 );
 
-Encoder encoder;
+// Menu
+MENU_INPUTS( in, &encStream );
+MENU_OUTPUTS( out, MAX_DEPTH
+  ,LCD_OUT( lcd, {0,0,20,4} )
+  ,NONE
+);
 
-// Callback functions
-void bed_0_task();
-void lcd_task();
+// Bed 1 menu
+MENU( subMenu, "Bed 1", doNothing, anyEvent, noStyle
+  ,OP( "Sub1", doNothing,anyEvent )
+  ,OP( "Sub2", doNothing,anyEvent )
+  ,OP( "Sub3", doNothing,anyEvent )
+  ,EXIT( "<-Back" )
+);
+
+// Main menu
+MENU( mainMenu, "Main menu", doNothing, noEvent, wrapStyle
+  ,SUBMENU( subMenu )
+  ,EXIT( "<-Back" )
+);
+
+NAVROOT( nav,mainMenu,MAX_DEPTH,in,out);//the navigation root object
 
 // Heated beds to control
 Heater bed_0( HEATER_0_PIN, TEMP_0_PIN );
 
-Menu menu( 16, 2, 0 );
-
+// Scheduler / Tasks
 Scheduler runner;
 Task t1( 100, TASK_FOREVER, bed_0_task );
-Task t2( 500, TASK_FOREVER, lcd_task );
+Task t2( 100, TASK_FOREVER, menu_task );
+
+
+/******************************************************************************
+ *                                 Procedures
+ *****************************************************************************/
+// Encoder timer
+void timerIsr() { clickEncoder.service(); }
 
 void setup()
 {
     Serial.begin( 9600 );
-
-    // Setup encoder knob
-    encoder.setup( 2, 3, []{encoder.pinA_callback();}, []{encoder.pinB_callback();} );
+    while(!Serial);
 
     // Setup menu
-    menu.setup( &main_menu );
+    nav.showTitle = true;
+    lcd.begin( 20,4 );
+    lcd.setCursor( 0, 0 );
+    lcd.print( "Not Your Mom's" );
+    lcd.setCursor( 0, 1 );
+    lcd.print( "Heated Bed" );
+    lcd.setCursor( 0, 3 );
+    lcd.print("By: Luke Mammen");
+    delay( 5000 );
 
-    // Setup heated beds
-    bed_0.setTargetTemp( 40.0 );
-    bed_0.enableHeater( true );
+    Timer1.initialize( 1000 );
+    Timer1.attachInterrupt( timerIsr );
 
     // Setup cooperative scheduler
     runner.init();
@@ -70,14 +130,7 @@ void bed_0_task()
 }
 
 
-void lcd_task()
+void menu_task()
 {
-    menu.update();
-    // // currTemp*/setpoint*
-    // lcd.setCursor( 0, 0 );
-    // lcd.print( bed_0.getCurrTemp(), 1 );
-    // lcd.write( 3 );
-    // lcd.print("/");
-    // lcd.print( bed_0.getTargetTemp(), 1 );
-    // lcd.write( 3 );
+    nav.poll();
 }
