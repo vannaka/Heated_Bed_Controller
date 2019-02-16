@@ -49,28 +49,45 @@ LiquidCrystal_I2C lcd( 0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE );
 ClickEncoder clickEncoder( encA, encB, encBtn, 4 );
 ClickEncoderStream encStream( clickEncoder, 1 );
 
+// Heated bed control vars
+int8_t global_temp = 0;
+bool global_on = false;
+
 // Menu
 MENU_INPUTS( in, &encStream );
 MENU_OUTPUTS( out, MAX_DEPTH
-  ,LCD_OUT( lcd, {0,0,20,4} )
-  ,NONE
+    ,LCD_OUT( lcd, {0,0,20,4} )
+    ,NONE
+);
+
+TOGGLE( global_on, globalOnToggle, "Enable: ", doNothing, noEvent, wrapStyle
+  ,VALUE( "True", true, doNothing, noEvent )
+  ,VALUE( "False", false, doNothing, noEvent )
+);
+
+// All beds menu
+MENU( allBedsMenu, "All Beds", doNothing, anyEvent, noStyle
+    ,FIELD( global_temp,"Glocal Temp: ","C", 0, 60, 5, 1, doNothing, noEvent, noStyle )
+    ,SUBMENU( globalOnToggle )
+    ,EXIT( "<-Back" )
 );
 
 // Bed 1 menu
 MENU( subMenu, "Bed 1", doNothing, anyEvent, noStyle
-  ,OP( "Sub1", doNothing,anyEvent )
-  ,OP( "Sub2", doNothing,anyEvent )
-  ,OP( "Sub3", doNothing,anyEvent )
-  ,EXIT( "<-Back" )
+    ,OP( "Sub1", doNothing,anyEvent )
+    ,OP( "Sub2", doNothing,anyEvent )
+    ,OP( "Sub3", doNothing,anyEvent )
+    ,EXIT( "<-Back" )
 );
 
 // Main menu
 MENU( mainMenu, "Main menu", doNothing, noEvent, wrapStyle
-  ,SUBMENU( subMenu )
-  ,EXIT( "<-Back" )
+    ,SUBMENU( allBedsMenu )
+    ,SUBMENU( subMenu )
+    ,EXIT( "<-Back" )
 );
 
-NAVROOT( nav,mainMenu,MAX_DEPTH,in,out);//the navigation root object
+NAVROOT( nav, mainMenu, MAX_DEPTH, in,out );
 
 // Heated beds to control
 Heater bed_0( HEATER_0_PIN, TEMP_0_PIN );
