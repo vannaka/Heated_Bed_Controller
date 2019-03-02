@@ -14,7 +14,7 @@
 #include <menuIO/serialIn.h>
 
 #include "heater/heater.h"
-#include "heater/pin_defs.h"
+#include "pin_defs.h"
 
 using namespace Menu;
 
@@ -53,10 +53,13 @@ ClickEncoder clickEncoder( encA, encB, encBtn, 4 );
 ClickEncoderStream encStream( clickEncoder, 1 );
 
 // Heated bed control vars
-int8_t global_temp = 0;
-int8_t bed_1_temp = 0;
+float global_temp = 0;
+float bed_1_temp = 0;
 bool global_on = false;
 bool bed_1_on = false;
+
+// Heated beds to control
+Heater bed_1( HEATER_1_PIN, TEMP_1_PIN );
 
 // Menu
 MENU_INPUTS( in, &encStream );
@@ -83,7 +86,7 @@ MENU( allBedsMenu, "All Beds          >", doNothing, anyEvent, noStyle
 );
 
 // Bed 1 menu
-MENU( subMenu, "Bed 1             >", doNothing, anyEvent, noStyle
+MENU( bed1Menu, "Bed 1             >", doNothing, anyEvent, noStyle
     ,EXIT( "Main              \01" )
     ,FIELD( bed_1_temp,"Bed 1 Temp: ","C", 0, 60, 5, 1, doNothing, noEvent, noStyle )
     ,SUBMENU( bed1OnToggle )
@@ -93,17 +96,15 @@ MENU( subMenu, "Bed 1             >", doNothing, anyEvent, noStyle
 MENU( mainMenu, "Main menu", doNothing, noEvent, wrapStyle
     ,EXIT( "Info Screen       \01" )
     ,SUBMENU( allBedsMenu )
-    ,SUBMENU( subMenu )
+    ,SUBMENU( bed1Menu )
 );
 
 NAVROOT( nav, mainMenu, MAX_DEPTH, in,out );
 
-// Heated beds to control
-Heater bed_1( HEATER_1_PIN, TEMP_1_PIN );
 
 // Scheduler / Tasks
 Scheduler runner;
-Task t1( 100, TASK_FOREVER, bed_1_task );
+Task t1( 500, TASK_FOREVER, bed_1_task );
 Task t2( 100, TASK_FOREVER, menu_task );
 
 
@@ -116,7 +117,6 @@ void timerIsr() { clickEncoder.service(); }
 void setup()
 {
     Serial.begin( 9600 );
-    while(!Serial);
 
     // Setup menu
     nav.timeOut = 10;   // sec
@@ -124,10 +124,12 @@ void setup()
     nav.idleTask = displayInfo;
     nav.exit();         // go to info screen
 
-    // Show splash screen
+    // Setup lcd
     lcd.begin( 20,4 );
     lcd.createChar( 0, degree );
     lcd.createChar( 1, return_arrow );
+
+    // Show splash screen
     lcd.setCursor( 0, 0 );
     lcd.print( "Not Your Mom's" );
     lcd.setCursor( 0, 1 );
@@ -175,14 +177,22 @@ void menu_task()
 /**********************************************************
 *   Info Screen
 **********************************************************/
-result displayInfo(menuOut& o,idleEvent e)
+result displayInfo( menuOut& o, idleEvent e )
 {
-    o.clear();
-    o.setCursor( 0, 0 );
-    o.print( bed_1.getCurrTemp(), 0 );
-    o.print( "/" );
-    o.print( bed_1.getTargetTemp(), 0 );
-    o.write( uint8_t(0) );
+    static uint32_t old_time = 0;
+    uint32_t cur_time = millis();
+
+    if( cur_time - old_time > 500 )
+    {
+        o.clear();
+        o.setCursor( 0, 0 );
+        o.print( bed_1.getCurrTemp(), 0 );
+        o.print( "/" );
+        o.print( bed_1.getTargetTemp(), 0 );
+        o.write( uint8_t(0) );
+
+        old_time = cur_time;
+    }
 
     nav.idleChanged = true;
     return proceed;

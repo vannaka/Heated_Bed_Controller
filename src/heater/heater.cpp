@@ -52,8 +52,8 @@ float Heater::getTargetTemp()
 void Heater::getTemp()
 {
     // Get raw value from thermistor
-    int raw;
-    
+    int raw = 0;
+
     for( int i = 0; i < 4; i++ )
     {
         raw += analogRead( tempPin );
