@@ -179,10 +179,10 @@ void menu_task()
 **********************************************************/
 result displayInfo( menuOut& o, idleEvent e )
 {
-    static uint32_t old_time = 0;
-    uint32_t cur_time = millis();
+    // static uint32_t old_time = 0;
+    // uint32_t cur_time = millis();
 
-    if( cur_time - old_time > 500 )
+    // if( cur_time - old_time > 500 )
     {
         o.clear();
         o.setCursor( 0, 0 );
@@ -191,7 +191,7 @@ result displayInfo( menuOut& o, idleEvent e )
         o.print( bed_1.getTargetTemp(), 0 );
         o.write( uint8_t(0) );
 
-        old_time = cur_time;
+        // old_time = cur_time;
     }
 
     nav.idleChanged = true;

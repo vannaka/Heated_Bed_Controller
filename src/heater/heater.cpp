@@ -7,6 +7,7 @@
 #define PID_CONTROL_RANGE 20
 #define Heater_MAX_POWER 150
 #define DEAD_TIME 80 // in increments of 100ms
+#define NUM_SAMPLES 16
 
 Heater::Heater( uint8_t heaterPin, uint8_t tempPin )
 {
@@ -54,10 +55,12 @@ void Heater::getTemp()
     // Get raw value from thermistor
     int raw = 0;
 
-    for( int i = 0; i < 4; i++ )
+    for( int i = 0; i < NUM_SAMPLES; i++ )
     {
         raw += analogRead( tempPin );
     }
+
+    raw = raw >> 2;
 
     size_t i = 0;
     float celsius = 0;
