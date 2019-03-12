@@ -1,4 +1,6 @@
 #include <Arduino.h>
+#include <math.h>
+
 #include <TaskScheduler.h>
 
 #include <Wire.h>
@@ -326,76 +328,37 @@ void menu_task()
 **********************************************************/
 result displayInfo( menuOut& o, idleEvent e )
 {
-    static uint32_t old_time = 0;
+    static uint32_t old_time = millis();
     uint32_t cur_time = millis();
 
-    if( cur_time - old_time > 500 )
+    if( cur_time - old_time > 1000 )
     {
-        char temp[5] = { '\0' };
-        char trgt[5] = { '\0' };
-
         char screen[81] = {" "};
         screen[80] = '\0';
 
-        memset( temp, 0, sizeof(temp) );
-        memset( trgt, 0, sizeof( trgt) );
-        dtostrf( bed_1.getCurrTemp(), 2, 0, temp );
-        dtostrf( bed_1.getTargetTemp(), 2, 0, trgt );
-        sprintf( &screen[20 * 0 + 0], "%s/%s\2", temp, trgt );
+        sprintf( screen + 20 * 0 + 0,  "%ld/%ld", round( bed_1.getCurrTemp() ), round( bed_1.getTargetTemp() ) );
+        sprintf( screen + 20 * 0 + 6,  "%ld/%ld", round( bed_2.getCurrTemp() ), round( bed_2.getTargetTemp() ) );
+        sprintf( screen + 20 * 0 + 12, "%ld/%ld", round( bed_3.getCurrTemp() ), round( bed_3.getTargetTemp() ) );
+        sprintf( screen + 20 * 1 + 0,  "%ld/%ld", round( bed_4.getCurrTemp() ), round( bed_4.getTargetTemp() ) );
+        sprintf( screen + 20 * 1 + 6,  "%ld/%ld", round( bed_5.getCurrTemp() ), round( bed_5.getTargetTemp() ) );
+        sprintf( screen + 20 * 1 + 12, "%ld/%ld", round( bed_6.getCurrTemp() ), round( bed_6.getTargetTemp() ) );
+        sprintf( screen + 20 * 2 + 0,  "%ld/%ld", round( bed_7.getCurrTemp() ), round( bed_7.getTargetTemp() ) );
+        sprintf( screen + 20 * 2 + 6,  "%ld/%ld", round( bed_8.getCurrTemp() ), round( bed_8.getTargetTemp() ) );
+        sprintf( screen + 20 * 2 + 12, "%ld/%ld", round( bed_9.getCurrTemp() ), round( bed_9.getTargetTemp() ) );
 
-        memset( temp, 0, sizeof(temp) );
-        memset( trgt, 0, sizeof( trgt) );
-        dtostrf( bed_2.getCurrTemp(), 2, 0, temp );
-        dtostrf( bed_2.getTargetTemp(), 2, 0, trgt );
-        sprintf( &screen[20 * 0 + 6], "%s/%s\2", temp, trgt );
-
-        memset( temp, 0, sizeof(temp) );
-        memset( trgt, 0, sizeof( trgt) );
-        dtostrf( bed_3.getCurrTemp(), 2, 0, temp );
-        dtostrf( bed_3.getTargetTemp(), 2, 0, trgt );
-        sprintf( &screen[20 * 0 + 12], "%s/%s\2", temp, trgt );
-
-        memset( temp, 0, sizeof(temp) );
-        memset( trgt, 0, sizeof( trgt) );
-        dtostrf( bed_4.getCurrTemp(), 2, 0, temp );
-        dtostrf( bed_4.getTargetTemp(), 2, 0, trgt );
-        sprintf( &screen[20 * 1 + 0], "%s/%s\2", temp, trgt );
-        
-        memset( temp, 0, sizeof(temp) );
-        memset( trgt, 0, sizeof( trgt) );
-        dtostrf( bed_5.getCurrTemp(), 2, 0, temp );
-        dtostrf( bed_5.getTargetTemp(), 2, 0, trgt );
-        sprintf( &screen[20 * 1 + 6], "%s/%s\2", temp, trgt );
-
-        memset( temp, 0, sizeof(temp) );
-        memset( trgt, 0, sizeof( trgt) );
-        dtostrf( bed_6.getCurrTemp(), 2, 0, temp );
-        dtostrf( bed_6.getTargetTemp(), 2, 0, trgt );
-        sprintf( &screen[20 * 1 + 12], "%s/%s\2", temp, trgt );
-
-        memset( temp, 0, sizeof(temp) );
-        memset( trgt, 0, sizeof( trgt) );
-        dtostrf( bed_7.getCurrTemp(), 2, 0, temp );
-        dtostrf( bed_7.getTargetTemp(), 2, 0, trgt );
-        sprintf( &screen[20 * 2 + 0], "%s/%s\2", temp, trgt );
-
-        memset( temp, 0, sizeof(temp) );
-        memset( trgt, 0, sizeof( trgt) );
-        dtostrf( bed_8.getCurrTemp(), 2, 0, temp );
-        dtostrf( bed_8.getTargetTemp(), 2, 0, trgt );
-        sprintf( &screen[20 * 2 + 6], "%s/%s\2", temp, trgt );
-
-        memset( temp, 0, sizeof(temp) );
-        memset( trgt, 0, sizeof( trgt) );
-        dtostrf( bed_9.getCurrTemp(), 2, 0, temp );
-        dtostrf( bed_9.getTargetTemp(), 2, 0, trgt );
-        sprintf( &screen[20 * 2 + 12], "%s/%s\2", temp, trgt );
+        // Get rid of null terminators added by sprintf
+        for( int i = 0; i < 80; i ++ )
+        {
+            if( screen[i] == '\0' )
+                screen[i] = ' ';
+        }
 
         o.clear();
         o.setCursor( 0, 0 );
         o.print( screen );
 
-        old_time = cur_time;
+        // old_time = cur_time;
+        old_time += 1000;
     }
 
     nav.idleChanged = true;
