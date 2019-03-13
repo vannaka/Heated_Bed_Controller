@@ -32,6 +32,9 @@ using namespace Menu;
 // Menu
 #define MAX_DEPTH 2
 
+// Beds
+#define NUM_BEDS 9
+
 /******************************************************************************
  *                          Function Declarations
  *****************************************************************************/
@@ -56,37 +59,24 @@ ClickEncoderStream encStream( clickEncoder, 1 );
 
 // Heated bed control vars
 float global_temp = 0;
-float bed_1_temp = 0;
-float bed_2_temp = 0;
-float bed_3_temp = 0;
-float bed_4_temp = 0;
-float bed_5_temp = 0;
-float bed_6_temp = 0;
-float bed_7_temp = 0;
-float bed_8_temp = 0;
-float bed_9_temp = 0;
+float bed_temps[NUM_BEDS] = { 0 };
 
 bool global_on = false;
-bool bed_1_on = false;
-bool bed_2_on = false;
-bool bed_3_on = false;
-bool bed_4_on = false;
-bool bed_5_on = false;
-bool bed_6_on = false;
-bool bed_7_on = false;
-bool bed_8_on = false;
-bool bed_9_on = false;
+bool beds_on[NUM_BEDS] = { false };
 
 // Heated beds to control
-Heater bed_1( HEATER_1_PIN, TEMP_1_PIN );
-Heater bed_2( HEATER_2_PIN, TEMP_2_PIN );
-Heater bed_3( HEATER_3_PIN, TEMP_3_PIN );
-Heater bed_4( HEATER_4_PIN, TEMP_4_PIN );
-Heater bed_5( HEATER_5_PIN, TEMP_5_PIN );
-Heater bed_6( HEATER_6_PIN, TEMP_6_PIN );
-Heater bed_7( HEATER_7_PIN, TEMP_7_PIN );
-Heater bed_8( HEATER_8_PIN, TEMP_8_PIN );
-Heater bed_9( HEATER_9_PIN, TEMP_9_PIN );
+Heater beds[NUM_BEDS] = 
+{
+    Heater( HEATER_1_PIN, TEMP_1_PIN ),
+    Heater( HEATER_2_PIN, TEMP_2_PIN ),
+    Heater( HEATER_3_PIN, TEMP_3_PIN ),
+    Heater( HEATER_4_PIN, TEMP_4_PIN ),
+    Heater( HEATER_5_PIN, TEMP_5_PIN ),
+    Heater( HEATER_6_PIN, TEMP_6_PIN ),
+    Heater( HEATER_7_PIN, TEMP_7_PIN ),
+    Heater( HEATER_8_PIN, TEMP_8_PIN ),
+    Heater( HEATER_9_PIN, TEMP_9_PIN ),
+};
 
 // Menu
 MENU_INPUTS( in, &encStream );
@@ -101,47 +91,47 @@ TOGGLE( global_on, globalOnToggle, "Enable: ", doNothing, noEvent, wrapStyle
   ,VALUE( "Off", false, doNothing, noEvent )
 );
 
-TOGGLE( bed_1_on, bed1OnToggle, "Enable: ", doNothing, noEvent, wrapStyle
+TOGGLE( beds_on[0], bed1OnToggle, "Enable: ", doNothing, noEvent, wrapStyle
   ,VALUE( "On", true, doNothing, noEvent )
   ,VALUE( "Off", false, doNothing, noEvent )
 );
 
-TOGGLE( bed_2_on, bed2OnToggle, "Enable: ", doNothing, noEvent, wrapStyle
+TOGGLE( beds_on[1], bed2OnToggle, "Enable: ", doNothing, noEvent, wrapStyle
   ,VALUE( "On", true, doNothing, noEvent )
   ,VALUE( "Off", false, doNothing, noEvent )
 );
 
-TOGGLE( bed_3_on, bed3OnToggle, "Enable: ", doNothing, noEvent, wrapStyle
+TOGGLE( beds_on[2], bed3OnToggle, "Enable: ", doNothing, noEvent, wrapStyle
   ,VALUE( "On", true, doNothing, noEvent )
   ,VALUE( "Off", false, doNothing, noEvent )
 );
 
-TOGGLE( bed_4_on, bed4OnToggle, "Enable: ", doNothing, noEvent, wrapStyle
+TOGGLE( beds_on[3], bed4OnToggle, "Enable: ", doNothing, noEvent, wrapStyle
   ,VALUE( "On", true, doNothing, noEvent )
   ,VALUE( "Off", false, doNothing, noEvent )
 );
 
-TOGGLE( bed_5_on, bed5OnToggle, "Enable: ", doNothing, noEvent, wrapStyle
+TOGGLE( beds_on[4], bed5OnToggle, "Enable: ", doNothing, noEvent, wrapStyle
   ,VALUE( "On", true, doNothing, noEvent )
   ,VALUE( "Off", false, doNothing, noEvent )
 );
 
-TOGGLE( bed_6_on, bed6OnToggle, "Enable: ", doNothing, noEvent, wrapStyle
+TOGGLE( beds_on[5], bed6OnToggle, "Enable: ", doNothing, noEvent, wrapStyle
   ,VALUE( "On", true, doNothing, noEvent )
   ,VALUE( "Off", false, doNothing, noEvent )
 );
 
-TOGGLE( bed_7_on, bed7OnToggle, "Enable: ", doNothing, noEvent, wrapStyle
+TOGGLE( beds_on[6], bed7OnToggle, "Enable: ", doNothing, noEvent, wrapStyle
   ,VALUE( "On", true, doNothing, noEvent )
   ,VALUE( "Off", false, doNothing, noEvent )
 );
 
-TOGGLE( bed_8_on, bed8OnToggle, "Enable: ", doNothing, noEvent, wrapStyle
+TOGGLE( beds_on[7], bed8OnToggle, "Enable: ", doNothing, noEvent, wrapStyle
   ,VALUE( "On", true, doNothing, noEvent )
   ,VALUE( "Off", false, doNothing, noEvent )
 );
 
-TOGGLE( bed_9_on, bed9OnToggle, "Enable: ", doNothing, noEvent, wrapStyle
+TOGGLE( beds_on[8], bed9OnToggle, "Enable: ", doNothing, noEvent, wrapStyle
   ,VALUE( "On", true, doNothing, noEvent )
   ,VALUE( "Off", false, doNothing, noEvent )
 );
@@ -155,55 +145,55 @@ MENU( allBedsMenu, "All Beds          >", doNothing, anyEvent, noStyle
 
 MENU( bed1Menu, "Bed 1             >", doNothing, anyEvent, noStyle
     ,EXIT( "Main              \01" )
-    ,FIELD( bed_1_temp,"Bed 1 Temp: ","C", 0, 60, 5, 1, doNothing, noEvent, noStyle )
+    ,FIELD( bed_temps[0], "Bed 1 Temp: ", "C", 0, 60, 5, 1, doNothing, noEvent, noStyle )
     ,SUBMENU( bed1OnToggle )
 );
 
 MENU( bed2Menu, "Bed 2             >", doNothing, anyEvent, noStyle
     ,EXIT( "Main              \01" )
-    ,FIELD( bed_2_temp,"Bed 2 Temp: ","C", 0, 60, 5, 1, doNothing, noEvent, noStyle )
+    ,FIELD( bed_temps[1], "Bed 2 Temp: ", "C", 0, 60, 5, 1, doNothing, noEvent, noStyle )
     ,SUBMENU( bed2OnToggle )
 );
 
 MENU( bed3Menu, "Bed 3             >", doNothing, anyEvent, noStyle
     ,EXIT( "Main              \01" )
-    ,FIELD( bed_2_temp,"Bed 3 Temp: ","C", 0, 60, 5, 1, doNothing, noEvent, noStyle )
+    ,FIELD( bed_temps[2], "Bed 3 Temp: ", "C", 0, 60, 5, 1, doNothing, noEvent, noStyle )
     ,SUBMENU( bed3OnToggle )
 );
 
 MENU( bed4Menu, "Bed 4             >", doNothing, anyEvent, noStyle
     ,EXIT( "Main              \01" )
-    ,FIELD( bed_4_temp,"Bed 4 Temp: ","C", 0, 60, 5, 1, doNothing, noEvent, noStyle )
+    ,FIELD( bed_temps[3], "Bed 4 Temp: ", "C", 0, 60, 5, 1, doNothing, noEvent, noStyle )
     ,SUBMENU( bed4OnToggle )
 );
 
 MENU( bed5Menu, "Bed 2             >", doNothing, anyEvent, noStyle
     ,EXIT( "Main              \01" )
-    ,FIELD( bed_5_temp,"Bed 5 Temp: ","C", 0, 60, 5, 1, doNothing, noEvent, noStyle )
+    ,FIELD( bed_temps[4], "Bed 5 Temp: ", "C", 0, 60, 5, 1, doNothing, noEvent, noStyle )
     ,SUBMENU( bed5OnToggle )
 );
 
 MENU( bed6Menu, "Bed 6             >", doNothing, anyEvent, noStyle
     ,EXIT( "Main              \01" )
-    ,FIELD( bed_6_temp,"Bed 6 Temp: ","C", 0, 60, 5, 1, doNothing, noEvent, noStyle )
+    ,FIELD( bed_temps[5], "Bed 6 Temp: ", "C", 0, 60, 5, 1, doNothing, noEvent, noStyle )
     ,SUBMENU( bed6OnToggle )
 );
 
 MENU( bed7Menu, "Bed 7             >", doNothing, anyEvent, noStyle
     ,EXIT( "Main              \01" )
-    ,FIELD( bed_7_temp,"Bed 7 Temp: ","C", 0, 60, 5, 1, doNothing, noEvent, noStyle )
+    ,FIELD( bed_temps[6], "Bed 7 Temp: ", "C", 0, 60, 5, 1, doNothing, noEvent, noStyle )
     ,SUBMENU( bed7OnToggle )
 );
 
 MENU( bed8Menu, "Bed 8             >", doNothing, anyEvent, noStyle
     ,EXIT( "Main              \01" )
-    ,FIELD( bed_8_temp,"Bed 8 Temp: ","C", 0, 60, 5, 1, doNothing, noEvent, noStyle )
+    ,FIELD( bed_temps[7], "Bed 8 Temp: ", "C", 0, 60, 5, 1, doNothing, noEvent, noStyle )
     ,SUBMENU( bed8OnToggle )
 );
 
 MENU( bed9Menu, "Bed 9             >", doNothing, anyEvent, noStyle
     ,EXIT( "Main              \01" )
-    ,FIELD( bed_9_temp,"Bed 9 Temp: ","C", 0, 60, 5, 1, doNothing, noEvent, noStyle )
+    ,FIELD( bed_temps[8], "Bed 9 Temp: ", "C", 0, 60, 5, 1, doNothing, noEvent, noStyle )
     ,SUBMENU( bed9OnToggle )
 );
 
@@ -285,35 +275,12 @@ void loop()
 **********************************************************/
 void bed_task()
 {
-    bed_1.setTargetTemp( bed_1_temp );
-    bed_2.setTargetTemp( bed_2_temp );
-    bed_3.setTargetTemp( bed_3_temp );
-    bed_4.setTargetTemp( bed_4_temp );
-    bed_5.setTargetTemp( bed_5_temp );
-    bed_6.setTargetTemp( bed_6_temp );
-    bed_7.setTargetTemp( bed_7_temp );
-    bed_8.setTargetTemp( bed_8_temp );
-    bed_9.setTargetTemp( bed_9_temp );
-
-    bed_1.enableHeater( bed_1_on );
-    bed_2.enableHeater( bed_2_on );
-    bed_3.enableHeater( bed_3_on );
-    bed_4.enableHeater( bed_4_on );
-    bed_5.enableHeater( bed_5_on );
-    bed_6.enableHeater( bed_6_on );
-    bed_7.enableHeater( bed_7_on );
-    bed_8.enableHeater( bed_8_on );
-    bed_9.enableHeater( bed_9_on );
-
-    bed_1.update();
-    bed_2.update();
-    bed_3.update();
-    bed_4.update();
-    bed_5.update();
-    bed_6.update();
-    bed_7.update();
-    bed_8.update();
-    bed_9.update();
+    for( int i = 0; i < NUM_BEDS; i++ )
+    {
+        beds[i].setTargetTemp( bed_temps[i] );
+        beds[i].enableHeater( beds_on[i] );
+        beds[i].update();
+    }
 }
 
 
@@ -331,20 +298,26 @@ result displayInfo( menuOut& o, idleEvent e )
     static uint32_t old_time = millis();
     uint32_t cur_time = millis();
 
-    if( cur_time - old_time > 1000 )
+    if( cur_time - old_time > 500 )
     {
         char screen[81] = {" "};
         screen[80] = '\0';
 
-        sprintf( screen + 20 * 0 + 0,  "%ld/%ld", round( bed_1.getCurrTemp() ), round( bed_1.getTargetTemp() ) );
-        sprintf( screen + 20 * 0 + 6,  "%ld/%ld", round( bed_2.getCurrTemp() ), round( bed_2.getTargetTemp() ) );
-        sprintf( screen + 20 * 0 + 12, "%ld/%ld", round( bed_3.getCurrTemp() ), round( bed_3.getTargetTemp() ) );
-        sprintf( screen + 20 * 1 + 0,  "%ld/%ld", round( bed_4.getCurrTemp() ), round( bed_4.getTargetTemp() ) );
-        sprintf( screen + 20 * 1 + 6,  "%ld/%ld", round( bed_5.getCurrTemp() ), round( bed_5.getTargetTemp() ) );
-        sprintf( screen + 20 * 1 + 12, "%ld/%ld", round( bed_6.getCurrTemp() ), round( bed_6.getTargetTemp() ) );
-        sprintf( screen + 20 * 2 + 0,  "%ld/%ld", round( bed_7.getCurrTemp() ), round( bed_7.getTargetTemp() ) );
-        sprintf( screen + 20 * 2 + 6,  "%ld/%ld", round( bed_8.getCurrTemp() ), round( bed_8.getTargetTemp() ) );
-        sprintf( screen + 20 * 2 + 12, "%ld/%ld", round( bed_9.getCurrTemp() ), round( bed_9.getTargetTemp() ) );
+        for( int i = 0; i < NUM_BEDS; i++ )
+        {
+            char* entry = screen + ( 20 * ( i / 3 ) ) + ( ( i % 3 ) * 6 );
+
+            float curr_tmp = beds[i].getCurrTemp();
+            float trgt_tmp = beds[i].getTargetTemp();
+
+            // Only display target temp if heater is on.
+            if( !beds_on[i] )
+                trgt_tmp = 0.0;
+
+            // NOTE: the arduino does not support %f modifiers in any
+            //  printf varient. We round as a workarount.
+            sprintf( entry , "%ld/%ld", round( curr_tmp ), round( trgt_tmp ) );
+        }
 
         // Get rid of null terminators added by sprintf
         for( int i = 0; i < 80; i ++ )
@@ -353,12 +326,23 @@ result displayInfo( menuOut& o, idleEvent e )
                 screen[i] = ' ';
         }
 
-        o.clear();
-        o.setCursor( 0, 0 );
-        o.print( screen );
+        // For some reason this swaps lines 2 and 3;
+        // o.setCursor( 0, 0 );
+        // o.print( screen );
 
-        // old_time = cur_time;
-        old_time += 1000;
+        // For whatever reason, the bellow prints the lines
+        //  in the correct order while the above swaps 
+        //  lines 2 and 3.
+        o.setCursor( 0, 0 );
+        o.write( screen, 20 );
+        o.setCursor( 0, 1 );
+        o.write( screen + 20, 20 );
+        o.setCursor( 0, 2 );
+        o.write( screen + 40, 20 );
+        o.setCursor( 0, 3 );
+        o.write( screen + 60, 20 );
+
+        old_time += 500;
     }
 
     nav.idleChanged = true;
