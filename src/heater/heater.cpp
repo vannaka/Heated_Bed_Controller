@@ -17,10 +17,15 @@ Heater::Heater( uint8_t heaterPin, uint8_t tempPin )
     pinMode( heaterPin, OUTPUT );
     pinMode( tempPin, INPUT );
 
+    enabled = false;
+
+    targetTemp = 40.0;
     currTemp = 20.0; // Room temp
     deltaTemp = 0.0;
-    enabled = false;
+    prevDeltaTemp = 0.0;
+    
     heaterPower = 0;
+    
     IStateLimitMin = 0;
     IStateLimitMax = Heater_MAX_POWER;
 }
@@ -52,9 +57,10 @@ float Heater::getTargetTemp()
 
 void Heater::getTemp()
 {
-    // Get raw value from thermistor
+    float prevTemp;
     int raw = 0;
 
+    // Get raw value from thermistor
     for( int i = 0; i < NUM_SAMPLES; i++ )
     {
         raw += analogRead( tempPin );

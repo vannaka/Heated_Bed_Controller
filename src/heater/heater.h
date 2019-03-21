@@ -25,7 +25,6 @@ private:
 
     float targetTemp;
     float currTemp;
-    float prevTemp;
 
     float deltaTemp;
     float prevDeltaTemp;

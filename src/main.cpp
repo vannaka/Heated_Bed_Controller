@@ -43,7 +43,8 @@ void bed_task();
 void menu_task();
 
 // Menu Callbacks
-result displayInfo( menuOut& o,idleEvent e );
+result displayInfo( menuOut& o, idleEvent e );
+result allOff();
 
 /******************************************************************************
  *                               Global Vars
@@ -58,8 +59,8 @@ ClickEncoder clickEncoder( encA, encB, encBtn, 4 );
 ClickEncoderStream encStream( clickEncoder, 1 );
 
 // Heated bed control vars
-float global_temp = 0;
-float bed_temps[NUM_BEDS] = { 0 };
+float global_temp = 40.0;
+float bed_temps[NUM_BEDS] = { 40.0, 40.0, 40.0, 40.0, 40.0, 40.0, 40.0, 40.0, 40.0 };
 
 bool global_on = false;
 bool beds_on[NUM_BEDS] = { false };
@@ -141,6 +142,7 @@ MENU( allBedsMenu, "All Beds          >", doNothing, anyEvent, noStyle
     ,EXIT( "Main              \01" )
     ,FIELD( global_temp,"Global Temp: ","C", 0, 60, 5, 1, doNothing, noEvent, noStyle )
     ,SUBMENU( globalOnToggle )
+    ,OP("All Off", allOff, enterEvent)
 );
 
 MENU( bed1Menu, "Bed 1             >", doNothing, anyEvent, noStyle
@@ -167,7 +169,7 @@ MENU( bed4Menu, "Bed 4             >", doNothing, anyEvent, noStyle
     ,SUBMENU( bed4OnToggle )
 );
 
-MENU( bed5Menu, "Bed 2             >", doNothing, anyEvent, noStyle
+MENU( bed5Menu, "Bed 5             >", doNothing, anyEvent, noStyle
     ,EXIT( "Main              \01" )
     ,FIELD( bed_temps[4], "Bed 5 Temp: ", "C", 0, 60, 5, 1, doNothing, noEvent, noStyle )
     ,SUBMENU( bed5OnToggle )
@@ -198,7 +200,7 @@ MENU( bed9Menu, "Bed 9             >", doNothing, anyEvent, noStyle
 );
 
 // Main menu
-MENU( mainMenu, "Main menu", doNothing, noEvent, wrapStyle
+MENU( mainMenu, "Main menu", doNothing, noEvent, noStyle
     ,EXIT( "Info Screen       \01" )
     ,SUBMENU( allBedsMenu )
     ,SUBMENU( bed1Menu )
@@ -347,4 +349,19 @@ result displayInfo( menuOut& o, idleEvent e )
 
     nav.idleChanged = true;
     return proceed;
+}
+
+
+/**********************************************************
+*   allOff
+*       Turn all heaters off.
+**********************************************************/
+result allOff()
+{
+    global_on = false;
+
+    for( int i = 0; i < NUM_BEDS; i++ )
+    {
+        beds_on[ i ] = false;
+    }
 }
