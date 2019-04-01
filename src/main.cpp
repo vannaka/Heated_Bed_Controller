@@ -293,7 +293,8 @@ void menu_task()
 
 
 /**********************************************************
-*   Info Screen
+*   displayInfo
+*       Updates the info screen.
 **********************************************************/
 result displayInfo( menuOut& o, idleEvent e )
 {
