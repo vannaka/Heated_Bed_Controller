@@ -18,7 +18,10 @@
 #include "heater/heater.h"
 #include "pin_defs.h"
 
+#include "softPWM/softpwm.h"
+
 using namespace Menu;
+using namespace Palatis;
 
 
 /******************************************************************************
@@ -256,6 +259,9 @@ void setup()
     // Timer for encoder knob
     Timer1.initialize( 1000 );
     Timer1.attachInterrupt( timerIsr );
+
+    // Heater
+    Heater::beginPWM( 15 ); // 15 Hz PWM for heater mosfets
 
     // Setup cooperative scheduler
     runner.init();

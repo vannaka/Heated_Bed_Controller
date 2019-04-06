@@ -2,12 +2,19 @@
 #define HEATER_H
 
 #include <stdint.h>
+#include "softPWM/softpwm.h"
 
+
+/******************************************************************************
+ *                                 Classes
+ *****************************************************************************/
 class Heater
 {
 
 public:
     Heater( uint8_t heaterPin, uint8_t tempPin );
+
+    static void beginPWM( uint32_t freq );
 
     void update();
     void setTargetTemp( float temp );

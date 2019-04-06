@@ -2,13 +2,41 @@
 #include "heater.h"
 #include "temp_table.h"
 
+using namespace Palatis;
+
+/******************************************************************************
+ *                                 Defines
+ *****************************************************************************/
 #define COUNT(a) ( sizeof(a) / sizeof(*a) )
 
 #define PID_CONTROL_RANGE 20
 #define Heater_MAX_POWER 150
-#define DEAD_TIME 80 // in increments of 100ms
+#define DEAD_TIME 16 // in increments of update()'s period.
+
 #define NUM_SAMPLES 16
 
+// Soft PWM
+SOFTPWM_DEFINE_CHANNEL( 0, DDRE, PORTE, PORTE4 );  // Mega pin 2
+SOFTPWM_DEFINE_CHANNEL( 1, DDRE, PORTE, PORTE5 );  // Mega pin 3
+SOFTPWM_DEFINE_CHANNEL( 2, DDRG, PORTG, PORTG5 );  // Mega pin 4
+SOFTPWM_DEFINE_CHANNEL( 3, DDRE, PORTE, PORTE3 );  // Mega pin 5
+SOFTPWM_DEFINE_CHANNEL( 4, DDRH, PORTH, PORTH3 );  // Mega pin 6
+SOFTPWM_DEFINE_CHANNEL( 5, DDRH, PORTH, PORTH4 );  // Mega pin 7
+SOFTPWM_DEFINE_CHANNEL( 6, DDRH, PORTH, PORTH5 );  // Mega pin 8
+SOFTPWM_DEFINE_CHANNEL( 7, DDRH, PORTH, PORTH6 );  // Mega pin 9
+SOFTPWM_DEFINE_CHANNEL( 8, DDRB, PORTB, PORTB4 );  // Mega pin 10
+
+
+/******************************************************************************
+ *                               Global Vars
+ *****************************************************************************/
+// Soft PWM
+SOFTPWM_DEFINE_OBJECT( 9 );
+
+
+/******************************************************************************
+ *                               Methods
+ *****************************************************************************/
 Heater::Heater( uint8_t heaterPin, uint8_t tempPin )
 {
     this->heaterPin = heaterPin;
@@ -28,6 +56,11 @@ Heater::Heater( uint8_t heaterPin, uint8_t tempPin )
     
     IStateLimitMin = 0;
     IStateLimitMax = Heater_MAX_POWER;
+}
+
+void Heater::beginPWM( uint32_t freq )
+{
+    SoftPWM.begin( freq );
 }
 
 void Heater::update()
@@ -105,7 +138,8 @@ int Heater::getPower()
 
 void Heater::setHeaterPower( int power )
 {
-    analogWrite( heaterPin, power );
+    // analogWrite( heaterPin, power );
+    SoftPWM.set( heaterPin, power );
 }
 
 void Heater::enableHeater( bool enable )
